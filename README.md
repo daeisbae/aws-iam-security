@@ -17,7 +17,20 @@ We will create an "IAM Management" user group, where IT service department (imag
 ![iam user group IAM permissions](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_user_group_iam_permissions.png)
 Here, I assigned all the permissions except the Root password create, delete, and audit permission. Since the IT department should not have the control of root but left the "IAM Full Access" permission which can be misused. (Will be exploited later in the lab)
 
-### User
+### Users
+
+Users are account for a person or an application.  You give it a name and credentials (a password or access keys) so it can sign in or call AWS services.  You can attach permission policies to that user to grant it the rights it needs.
+
+![iam user create](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_user_create_user_detail.png)
+We will create an account called iam-service, so helpdesk professionals can use this account to resolve account troubleshooting.
+
+![iam user assign permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_user_create_assign_permission.png)
+We will assign the "IAM-Management" permission which we created earlier. We will demonstrate the privilege escalation later using this account
+
+![iam user creation review](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_user_create_user_review.png)
+Now we can review the new user detail and create it.
+
+### Roles
 
 ## Mitigations
 
