@@ -1,10 +1,10 @@
 # aws-iam-security
 
-## Users vs Roles vs User Groups
+## 1. Users vs Roles vs User Groups
 
 We will first investigate the difference between Users, Roles, and User Groups
 
-### User Groups
+### 1.1 User Groups
 
 User Groups are like a folder for IAM users. You can add users to that folder then attach permission policies to it. Any user in the group automatically gets those permissions. This way you can manage access for many users at once.
 
@@ -17,7 +17,7 @@ We will create an "IAM Management" user group, where IT service department (imag
 ![iam user group IAM permissions](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_user_group_iam_permissions.png)
 Here, I assigned all the permissions except the Root password create, delete, and audit permission. Since the IT department should not have the control of root but left the "IAM Full Access" permission which can be misused. (Will be exploited later in the lab)
 
-### Users
+### 1.2 Users
 
 Users are account for a person or an application.  You give it a name and credentials (a password or access keys) so it can sign in or call AWS services.  You can attach permission policies to that user to grant it the rights it needs.
 
@@ -30,7 +30,7 @@ We will assign the "IAM-Management" permission which we created earlier. We will
 ![iam user creation review](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_user_create_user_review.png)
 Now we can review the new user detail and create it.
 
-### Roles
+### 1.3 Roles
 
 Roles are job description you hand out on demand. Instead of a long lived user account with its own password or keys, a role has a set of permissions that anyone with the given permission can “assume” it and get the privilege temporarily.
 
@@ -86,12 +86,12 @@ Now we have the "AdminAccess" role privilege, so let's goto IAM dashboard again 
 ![iam dashboard full access using AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_test_user_iam_dashboard_full_access.png)
 We can see IAM dashboard now!
 
-## Exploit
+## 2. Exploit
 
-### IAM Privilege Escalation - sts::assumeRole
+### 2.1 IAM Privilege Escalation - sts::assumeRole
 
-## Mitigations
+## 3. Mitigations
 
-### AWS IAM Access Analyzer
+### 3.1 AWS IAM Access Analyzer
 
-### AWS Config
+### 3.2 AWS Config
