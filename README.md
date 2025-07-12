@@ -32,6 +32,64 @@ Now we can review the new user detail and create it.
 
 ### Roles
 
+Roles are job description you hand out on demand. Instead of a long lived user account with its own password or keys, a role has a set of permissions that anyone with the given permission can “assume” it and get the privilege temporarily.
+
+![iam role type selection](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_select_entity.png)
+Select the type of role, you want to create. AWS service is a service account used for particular service such as EC2. Since we are going to use it for temporary permission assigning, we will select AWS account.
+
+![iam role add permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_create_assign_permission.png)
+Assign the permission that you want to allow the role to have. Here, I will give "AdministratorAccess" to the role I'm creating
+
+![iam role add name and detail](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_create_role_detail.png)
+I gave the name "AdminAccess" which is gonna be used by my "test-user" to gain admin privilege
+
+![iam test user no permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_test_user_no_permission.png)
+Currently there's no permission assigned to "test user". Now we are going to click "Add permissions" -> "Create inline policy" to assign the "AdminAccess" role privilege.
+
+![iam test user assigning assume role privilege](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_assign_assumerole_to_user_1.png)
+Here we will use json schema, then give "sts::AssumeRole" permission inside "Action", ARN of the role we want to use in the "Resource" section.
+
+Here is the sample json schema:
+
+```json
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "Statement1",
+			"Effect": "Allow",
+			"Action": "sts:AssumeRole",
+			"Resource": "arn:aws:iam::{aws account id}:role/AdminAccess"
+		}
+	]
+}
+```
+
+![iam test user inline policy name](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_assign_assumerole_to_user_2.png)
+Next we will give the name of the inline policy (AssumeRole inline policy) as "TempAdminAccess". Create policy to give AdminAccess role access to the test user.
+
+![iam test user no permission iam dashboard](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_test_user_no_permission_iam_dashboard.png)
+We login as "test user" now. We can see we do not have any permission to view or modify in IAM dashboard, hence we will switch to "AdminAccess" role to gain privilege.
+
+Click the top-right corner which displays the username @ account. Then select "Switch Role" to use "AssumeRole" privilege.
+
+![iam switch role to AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_switch_role.png)
+Fill in the correct account info, role name then confirm to switch to "AdminAccess" role
+
+![iam switch role no permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_switch_role_no_permission.png)
+> [!IMPORTANT]
+> If you do not have "AssumeRole" policy in your user account, you will see this error above!
+
+![iam switched to AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_switch_from_user.png)
+Now we have the "AdminAccess" role privilege, so let's goto IAM dashboard again to check if we got access
+
+![iam dashboard full access using AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_test_user_iam_dashboard_full_access.png)
+We can see IAM dashboard now!
+
+## Exploit
+
+### IAM Privilege Escalation - sts::assumeRole
+
 ## Mitigations
 
 ### AWS IAM Access Analyzer
