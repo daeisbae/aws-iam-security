@@ -53,15 +53,15 @@ Here is the sample json schema:
 
 ```json
 {
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Sid": "Statement1",
-			"Effect": "Allow",
-			"Action": "sts:AssumeRole",
-			"Resource": "arn:aws:iam::{aws account id}:role/AdminAccess"
-		}
-	]
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Sid": "Statement1",
+   "Effect": "Allow",
+   "Action": "sts:AssumeRole",
+   "Resource": "arn:aws:iam::{aws account id}:role/AdminAccess"
+  }
+ ]
 }
 ```
 
