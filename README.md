@@ -90,7 +90,29 @@ We can see IAM dashboard now!
 
 ## 2. Exploit
 
-### 2.1 IAM Privilege Escalation - sts::assumeRole
+### 2.1 IAM Privilege Escalation - sts::AssumeRole
+
+Above, we gave [IAM Management User Group](#11-user-groups) with Full IAM Permission as IT department may need to troubleshoot with employee account, and to resolve, various IAM permission is required. However, giving full IAM Access is dangerous as we can escalate privilege to root using AssumeRole or other privileges.
+
+Here we will self assign privilege using the "IAM Management" group privilege we created.
+
+![iam service no privilege to access cloudtrail](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_no_cloudtrail_access.png)
+We have a scenario where the IT service department want to access cloudtrail for curiousity, but they do not have permission to access it
+
+![go to iam service user profile](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_self_assign_role_1.png)
+Goto own user profile (iam service) then "Add permission" -> "Create inline policy"
+
+![Assigning assume role privilege](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_self_assign_role_2.png)
+Give "sts::AssumeRole" permission inside "Action", ARN of the role we want to use in the "Resource" section. [We did this before](#13-roles)
+
+![iam service inline policy name](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_self_assign_role_3.png)
+Assign the policy name to itself. (You can name whatever you want! Since this is a lab)
+
+![iam service switch role](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_self_assign_role_4.png)
+Click "Switch role" or if you have already have role registered, switch it [Refer here if you do not understand](#13-roles)
+
+![iam service to AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_self_assign_role_5.png)
+On the top-right, you can see we have successfully switched to "AdminAccess" role. You can now access CloudTrail as we got the administrative privilege.
 
 ## 3. Mitigations
 
