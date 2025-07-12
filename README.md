@@ -1,4 +1,6 @@
-# aws-iam-security
+# AWS IAM Security
+
+This repository demonstrates common AWS IAM security vulnerabilities and privilege escalation techniques through hands-on examples. You will learn how seemingly harmless IAM configurations can lead to complete account compromise, and more importantly, how to prevent these security gaps
 
 ## 1. Users vs Roles vs User Groups
 
