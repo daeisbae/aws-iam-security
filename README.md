@@ -116,6 +116,18 @@ On the top-right, you can see we have successfully switched to "AdminAccess" rol
 
 ## 3. Mitigations
 
-### 3.1 AWS IAM Access Analyzer
+### 3.1 AWS CloudTrail
+
+CloudTrail is AWS audit logging service that records all API calls and administrative actions in your AWS account. You can use this record to search for any security detection and investigations.
+
+![cloudtrail creation](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_cloudtrail_create_trail.png)
+Create a trail workflow in order to record the logs. After creating the trail, you can log and view all the logs happen after that.
+
+![cloudtrail assume role detection](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_cloudtrail_switchrole_event_1.png)
+You can detect [sts::AssumeRole](#13-roles) by searching for switchrole in cloudtrail. If you click the event, you can get further information in detail.
+
+![cloudtrail detection specifics](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_cloudtrail_switchrole_event_2.png)
+![cloudtrail detection specifics](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_cloudtrail_switchrole_event_3.png)
+Here you can get the event information such as ip address of the source, instance/resource it used, the user/role it used for the access, the web browser information (user-agent) used to connect to the instance.
 
 ### 3.2 AWS Config
