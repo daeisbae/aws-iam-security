@@ -131,3 +131,17 @@ You can detect [sts::AssumeRole](#13-roles) by searching for switchrole in cloud
 Here you can get the event information such as ip address of the source, instance/resource it used, the user/role it used for the access, the web browser information (user-agent) used to connect to the instance.
 
 ### 3.2 AWS Config
+
+AWS Config is a compliance monitoring service that continuously tracks your AWS resource configurations and evaluates them against security best practices. Config warns you about dangerous configurations before they can be exploited.
+
+![config iam setting](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_config_setting_iam.png)
+First, we need to enable AWS Config to monitor IAM resources. Start the configuration process to track IAM policies, roles, and users.
+
+![config iam rules](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_config_iam_rule.png)
+AWS Config provides managed rules specifically for IAM security (There's others, but I specifically filtered the rules for IAM).
+
+![config setting review](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_config_setting_review.png)
+Review the configuration settings before enabling Config. This will start monitoring all changes to your IAM resources and evaluate them against compliance rules automatically.
+
+![config compliance status](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_config_iam_rules_compliance_status.png)
+The compliance dashboard shows which IAM resources violate security best practices. Here it shows I got few IAM bad practices such as password weakness, inline policy for AssumeRole.
