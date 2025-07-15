@@ -2,6 +2,20 @@
 
 This repository demonstrates common AWS IAM security vulnerabilities and privilege escalation techniques through hands-on examples. You will learn how seemingly harmless IAM configurations can lead to complete account compromise, and more importantly, how to prevent these security gaps
 
+## Table of Contents
+1. [Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
+   1. [User Groups](#11-user-groups)
+   2. [Users](#12-users)
+   3. [Roles](#13-roles)
+2. [Exploits](#2-exploits)
+   1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
+3. [Mitigations](#3-mitigations)
+   1. [AWS CloudTrail](#31-aws-cloudtrail)
+   2. [AWS Config](#32-aws-config)
+   3. [AWS GuardDuty](#33-aws-guardduty)
+      1. [Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
+      2. [Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+
 ## 1. Users vs Roles vs User Groups
 
 We will first investigate the difference between Users, Roles, and User Groups
@@ -88,7 +102,7 @@ Now we have the "AdminAccess" role privilege, so let's goto IAM dashboard again 
 ![iam dashboard full access using AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_test_user_iam_dashboard_full_access.png)
 We can see IAM dashboard now!
 
-## 2. Exploit
+## 2. Exploits
 
 ### 2.1 IAM Privilege Escalation - sts::AssumeRole
 
