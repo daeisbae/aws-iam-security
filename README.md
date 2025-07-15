@@ -145,3 +145,53 @@ Review the configuration settings before enabling Config. This will start monito
 
 ![config compliance status](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_config_iam_rules_compliance_status.png)
 The compliance dashboard shows which IAM resources violate security best practices. Here it shows I got few IAM bad practices such as password weakness, inline policy for AssumeRole.
+
+### 3.3 AWS GuardDuty
+
+AWS GuardDuty is a threat detection service that continuously monitors for malicious activity and unauthorized behavior to protect your AWS accounts, workloads, and data. GuardDuty finds threats by analyzing AWS CloudTrail event logs, VPC Flow Logs, and DNS logs.
+
+![guardduty configuration for ec2](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_monitoring_setup_1.png)
+First, enable GuardDuty. Then goto "Runtime Monitoring" to configure the service to monitor EC2 instances.
+
+![vpc flow log configuration for guardduty](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_monitoring_setup_2.png)
+Next, you need to enable VPC Flow Logs to monitor network traffic. This is required for GuardDuty to analyze network activity and detect threats.
+
+![guardduty ec2 monitoring dashboard](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_dashboard.png)
+The GuardDuty dashboard shows the status of your threat detection setup. It will start monitoring your instances and network traffic for suspicious activity.
+
+#### 3.3.1 Running Nmap for Ping Sweep
+
+Let's say your instance is compromised and the attacker is trying to scan your network using Nmap. GuardDuty will detect this malicious activity.
+
+```bash
+nmap -sn <target-ip>/<cidr>
+```
+
+![guardduty nmap detection](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_nmap_detection_1.png)
+GuardDuty will alert you about the Nmap scan attempt. You can see the details of the detection.
+
+![guardduty nmap detection details 1](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_nmap_detection_2.png)
+![guardduty nmap detection details 2](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_nmap_detection_3.png)
+![guardduty nmap detection details 3](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_nmap_detection_4.png)
+You can see the specific details of the Nmap scan, including the instance, hacker details, and the process used for the attack. This helps you understand the attacker's intent and take appropriate action.
+
+#### 3.3.2 Unusual API Calls from unusual IP
+
+If an attacker is using the compromised instance to make unusual API calls, GuardDuty will also detect this. For example, you can extract the EC2 instance credentials from the metadata using the command `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/<role-name>`. This can extract the temporary role credentials used by the instance.
+
+Using these credentials, the attacker can use the AWS CLI to make API calls. For example, they can start enumerating IAM users:
+
+```bash
+aws iam list-users --profile <role-name>
+```
+
+![kali linux aws enum using ec2 role credentials](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_kali_enum.png)
+Using the credentials extracted from the metadata, the attacker can use the AWS API key to enumerate IAM users and perform other actions. GuardDuty will detect this unusual activity.
+
+> [!IMPORTANT]
+> You need to extract the credentials from the metadata endpoint and use them in different endpoint to make API calls to trigger GuardDuty detection.
+
+![guardduty unusual api call detection](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_kali_detection_1.png)
+![guardduty list-users detection 1](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_kali_detection_2.png)
+![guardduty list-users detection 2](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_kali_detection_3.png)
+GuardDuty will alert you about the unusual API calls made from the compromised instance. You can see the details of the detection, including the specific API calls made and the instance involved.
