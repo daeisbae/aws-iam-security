@@ -3,21 +3,19 @@
 This repository demonstrates common AWS IAM security vulnerabilities and privilege escalation techniques through hands-on examples. You will learn how seemingly harmless IAM configurations can lead to complete account compromise, and more importantly, how to prevent these security gaps
 
 ## Table of Contents
-- [AWS IAM Security](#aws-iam-security)
-  - [Table of Contents](#table-of-contents)
-  - [1. Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
-    - [1.1 User Groups](#11-user-groups)
-    - [1.2 Users](#12-users)
-    - [1.3 Roles](#13-roles)
-  - [2. Exploits](#2-exploits)
-    - [2.1 IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
-    - [2.2 EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
-  - [3. Mitigations](#3-mitigations)
-    - [3.1 AWS CloudTrail](#31-aws-cloudtrail)
-    - [3.2 AWS Config](#32-aws-config)
-    - [3.3 AWS GuardDuty](#33-aws-guardduty)
-      - [3.3.1 Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
-      - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+1. [Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
+   1. [User Groups](#11-user-groups)
+   2. [Users](#12-users)
+   3. [Roles](#13-roles)
+2. [Exploits](#2-exploits)
+   1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
+   2. [EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
+3. [Mitigations](#3-mitigations)
+   1. [AWS CloudTrail](#31-aws-cloudtrail)
+   2. [AWS Config](#32-aws-config)
+   3. [AWS GuardDuty](#33-aws-guardduty)
+      1. [Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
+      2. [Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
 
 ## 1. Users vs Roles vs User Groups
 
