@@ -4,20 +4,23 @@ This repository demonstrates common AWS IAM security vulnerabilities and privile
 
 ## Table of Contents
 
-1. [Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
-   1. [User Groups](#11-user-groups)
-   2. [Users](#12-users)
-   3. [Roles](#13-roles)
-2. [Exploits](#2-exploits)
-   1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
-   2. [EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
-3. [Mitigations](#3-mitigations)
-   1. [AWS CloudTrail](#31-aws-cloudtrail)
-   2. [AWS Config](#32-aws-config)
-   3. [AWS GuardDuty](#33-aws-guardduty)
-      1. [Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
-      2. [Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
-   4. [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
+- [AWS IAM Security](#aws-iam-security)
+  - [Table of Contents](#table-of-contents)
+  - [1. Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
+    - [1.1 User Groups](#11-user-groups)
+    - [1.2 Users](#12-users)
+    - [1.3 Roles](#13-roles)
+  - [2. Exploits](#2-exploits)
+    - [2.1 IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
+    - [2.2 EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
+    - [2.3 IAM Privilege Escalation - iam::CreateAccessKey](#23-iam-privilege-escalation---iamcreateaccesskey)
+  - [3. Mitigations](#3-mitigations)
+    - [3.1 AWS CloudTrail](#31-aws-cloudtrail)
+    - [3.2 AWS Config](#32-aws-config)
+    - [3.3 AWS GuardDuty](#33-aws-guardduty)
+      - [3.3.1 Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
+      - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+    - [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
 
 
 ## 1. Users vs Roles vs User Groups
@@ -172,6 +175,33 @@ curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-da
 Using the credentials extracted from the metadata, the attacker can use the AWS API key in aws cli to be used for enumeration and exploit.
 
 However, the above method is not recommended as it can be [detected by AWS GuardDuty](#332-unusual-api-calls-from-unusual-ip). Instead, you can enumerate directly using the reverse shell or ssh into the instance.
+
+### 2.3 IAM Privilege Escalation - iam::CreateAccessKey
+
+![test-user containing create access key permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_access_key_user_creation.png)
+![create access key permission](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_access_key_user_perm.png)
+Here we will give "test-user" the create access key permission so that it can create the access keys for other users.
+
+![create target with higher privilege](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_access_key_create_target.png)
+Next, we will create a "target" user that has higher privilege than the "test-user"
+
+```bash
+aws iam create-access-key --user-name target --profile test-user
+```
+After using the command for the "target" user, we will get the access and secret key for "target"
+
+![target user credentials using create access key](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_access_key_target_access_key_generation.png)
+Finally we will verify the user of the access key after configuring to aws cli `aws configure --profile target`
+
+We can verify the identity of target through the command:
+
+```bash
+aws sts get-caller-identity --profile target
+```
+
+After that we can get the "target" identity
+
+![target sts identity](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_access_key_target_pwned.png)
 
 ## 3. Mitigations
 
