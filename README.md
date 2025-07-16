@@ -21,6 +21,7 @@ This repository demonstrates common AWS IAM security vulnerabilities and privile
       - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
     - [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
 
+
 ## 1. Users vs Roles vs User Groups
 
 We will first investigate the difference between Users, Roles, and User Groups
