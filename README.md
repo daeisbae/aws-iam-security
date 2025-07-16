@@ -3,19 +3,23 @@
 This repository demonstrates common AWS IAM security vulnerabilities and privilege escalation techniques through hands-on examples. You will learn how seemingly harmless IAM configurations can lead to complete account compromise, and more importantly, how to prevent these security gaps
 
 ## Table of Contents
-1. [Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
-   1. [User Groups](#11-user-groups)
-   2. [Users](#12-users)
-   3. [Roles](#13-roles)
-2. [Exploits](#2-exploits)
-   1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
-   2. [EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
-3. [Mitigations](#3-mitigations)
-   1. [AWS CloudTrail](#31-aws-cloudtrail)
-   2. [AWS Config](#32-aws-config)
-   3. [AWS GuardDuty](#33-aws-guardduty)
-      1. [Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
-      2. [Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+
+- [AWS IAM Security](#aws-iam-security)
+  - [Table of Contents](#table-of-contents)
+  - [1. Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
+    - [1.1 User Groups](#11-user-groups)
+    - [1.2 Users](#12-users)
+    - [1.3 Roles](#13-roles)
+  - [2. Exploits](#2-exploits)
+    - [2.1 IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
+    - [2.2 EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
+  - [3. Mitigations](#3-mitigations)
+    - [3.1 AWS CloudTrail](#31-aws-cloudtrail)
+    - [3.2 AWS Config](#32-aws-config)
+    - [3.3 AWS GuardDuty](#33-aws-guardduty)
+      - [3.3.1 Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
+      - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+    - [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
 
 ## 1. Users vs Roles vs User Groups
 
@@ -251,3 +255,23 @@ Using the credentials extracted from the metadata, the attacker can use the AWS 
 ![guardduty list-users detection 1](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_kali_detection_2.png)
 ![guardduty list-users detection 2](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_guardduty_ec2_kali_detection_3.png)
 GuardDuty will alert you about the unusual API calls made from the compromised instance. You can see the details of the detection, including the specific API calls made and the instance involved.
+
+### 3.4 AWS IAM Access Analyzer
+
+AWS IAM Access Analyzer helps you identify resources in your account that are shared with other AWS accounts or is unused.
+
+![create unused access analyzer](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_access_analyzer_create_unused_access.png)
+First, you need to create an Access Analyzer. "Unused access analyzer" will identify resources that are not being used.
+
+![unused access analyzer dashboard](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_access_analyzer_unused_access_dashboard.png)
+Next, you can see the dashboard of the unused access analyzer.
+
+![unused account](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_access_analyzer_unused_account.png)
+The unused password shows the accounts that have not been used for the set period of time which we configured it for 3 days.
+
+![unused access by admin](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_access_analyzer_unused_access_admin_1.png)
+We can see all the unused permission by admin account. This is useful to identify unused permissions that can be removed to reduce the attack surface
+
+![permission recommendation for admin](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_access_analyzer_unused_access_admin_2.png)
+![permission recommendation for admin](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_iam_access_analyzer_unused_access_admin_3.png)
+You can see the permission recommendation for the admin account to remove unused permissions.
