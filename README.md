@@ -12,6 +12,7 @@ This repository demonstrates common AWS IAM security vulnerabilities and privile
    1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
    2. [EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
    3. [IAM Privilege Escalation - iam::CreateAccessKey](#23-iam-privilege-escalation---iamcreateaccesskey)
+   4. [IAM Privilege Escalation - iam::AddUserToGroup](#24-iam-privilege-escalation---iamaddusertogroup)
 3. [Mitigations](#3-mitigations)
    1. [AWS CloudTrail](#31-aws-cloudtrail)
    2. [AWS Config](#32-aws-config)
@@ -200,6 +201,24 @@ aws sts get-caller-identity --profile target
 After that we can get the "target" identity
 
 ![target sts identity](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_create_access_key_target_pwned.png)
+
+### 2.4 IAM Privilege Escalation - iam::AddUserToGroup
+
+![create add user to group policy](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_add_user_to_group_policy.png)
+![assign test user to add user to group policy](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_add_user_to_group_user_perm.png)
+Here we will give "test-user" the "add user to group" permission so that it can assign the group to users.
+
+![test user group before exploit](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_add_user_to_group_test_user_groups.png)
+We can see the test-user do not have any group assigned
+
+Let's use the command below:
+
+```bash
+aws iam add-user-to-group --group-name AdminGroup --user-name test-user --profile test-user
+```
+
+![test user group after exploit](https://github.com/daeisbae/aws-iam-security/blob/main/images/aws_exploit_add_user_to_group_user_groups_after_exploit.png)
+After that we can see "AdminGroup" assigned to "test-user"
 
 ## 3. Mitigations
 
