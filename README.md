@@ -1,26 +1,31 @@
 # AWS IAM Security
 
-This repository demonstrates common AWS IAM security vulnerabilities and privilege escalation techniques through hands-on examples. You will learn how seemingly harmless IAM configurations can lead to complete account compromise, and more importantly, how to prevent these security gaps
+This repository is an AWS IAM security case study. It shows how common IAM permissions can create privilege escalation paths, then documents the detections, evidence requirements, and remediation controls needed to review the same issues in an audit.
 
 ## Table of Contents
 
-1. [Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
-   1. [User Groups](#11-user-groups)
-   2. [Users](#12-users)
-   3. [Roles](#13-roles)
-2. [Exploits](#2-exploits)
-   1. [IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
-   2. [EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
-   3. [IAM Privilege Escalation - iam::CreateAccessKey](#23-iam-privilege-escalation---iamcreateaccesskey)
-   4. [IAM Privilege Escalation - iam::AddUserToGroup](#24-iam-privilege-escalation---iamaddusertogroup)
-3. [Mitigations](#3-mitigations)
-   1. [AWS CloudTrail](#31-aws-cloudtrail)
-   2. [AWS Config](#32-aws-config)
-   3. [AWS GuardDuty](#33-aws-guardduty)
-      1. [Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
-      2. [Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
-   4. [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
-
+- [AWS IAM Security](#aws-iam-security)
+  - [Table of Contents](#table-of-contents)
+  - [1. Users vs Roles vs User Groups](#1-users-vs-roles-vs-user-groups)
+    - [1.1 User Groups](#11-user-groups)
+    - [1.2 Users](#12-users)
+    - [1.3 Roles](#13-roles)
+  - [2. Exploits](#2-exploits)
+    - [2.1 IAM Privilege Escalation - sts::AssumeRole](#21-iam-privilege-escalation---stsassumerole)
+    - [2.2 EC2 Privilege Escalation - ec2::RunInstances and iam::PassRole](#22-ec2-privilege-escalation---ec2runinstances-and-iampassrole)
+    - [2.3 IAM Privilege Escalation - iam::CreateAccessKey](#23-iam-privilege-escalation---iamcreateaccesskey)
+    - [2.4 IAM Privilege Escalation - iam::AddUserToGroup](#24-iam-privilege-escalation---iamaddusertogroup)
+  - [3. Mitigations](#3-mitigations)
+    - [3.1 AWS CloudTrail](#31-aws-cloudtrail)
+    - [3.2 AWS Config](#32-aws-config)
+    - [3.3 AWS GuardDuty](#33-aws-guardduty)
+      - [3.3.1 Running Nmap for Ping Sweep](#331-running-nmap-for-ping-sweep)
+      - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
+    - [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
+    - [3.5 AWS Organizations and SCP Guardrails](#35-aws-organizations-and-scp-guardrails)
+  - [4. Audit Documentation](#4-audit-documentation)
+    - [4.1 Documentation Index](#41-documentation-index)
+    - [4.2 Evidence Templates](#42-evidence-templates)
 
 ## 1. Users vs Roles vs User Groups
 
@@ -321,3 +326,175 @@ We can see all the unused permission by admin account. This is useful to identif
 ![permission recommendation for admin](images/aws_iam_access_analyzer_unused_access_admin_2.png)
 ![permission recommendation for admin](images/aws_iam_access_analyzer_unused_access_admin_3.png)
 You can see the permission recommendation for the admin account to remove unused permissions.
+
+### 3.5 AWS Organizations and SCP Guardrails
+
+AWS Organizations lets you group AWS accounts and apply service control policies to those accounts. An SCP sets the maximum permission that can be used in an account. It does not grant permission by itself. The user or role still needs IAM permission inside the account.
+
+In this lab, we will use SCPs to protect the aws-iam-security-lab member account from the IAM privilege escalation paths shown earlier.
+
+First, we opened AWS Organizations and created an organization with all features enabled.
+
+![aws organizations create home](images/aws_organizations_create_home.png)
+The AWS Organizations start page gives the option to create an organization for multiple AWS accounts.
+
+![aws organizations create consideration](images/aws_organizations_create_consideration.png)
+![aws organizations created success](images/aws_organizations_created_success.png)
+Now we can see the organization was created successfully.
+
+Next, we created an OU called "Sandbox". This OU is used for the lab account so the SCPs do not affect the management account.
+
+![aws organizations create ou menu](images/aws_organizations_create_ou_menu.png)
+Here, we selected the root and used the Actions menu to create a new organizational unit.
+
+![aws organizations create ou sandbox](images/aws_organizations_create_ou_sandbox.png)
+We named the organizational unit "Sandbox".
+
+Then we created a member account called "aws-iam-security-lab".
+
+![aws organizations create account form](images/aws_organizations_create_account_form.png)
+
+After the member account was created, we moved it into the "Sandbox" OU.
+
+![aws organizations move account menu](images/aws_organizations_move_account_menu.png)
+Here, we selected "aws-iam-security-lab" and chose Move.
+
+![aws organizations move account destination](images/aws_organizations_move_account_destination.png)
+The destination is the "Sandbox" OU.
+
+![aws organizations sandbox account](images/aws_organizations_sandbox_account.png)
+Now we can see "aws-iam-security-lab" inside the "Sandbox" OU. Any SCP attached to "Sandbox" applies to this lab member account.
+
+Next, we enabled service control policies.
+
+![aws organizations policy types](images/aws_organizations_policy_types.png)
+Under AWS Organizations policies, we selected Service control policies.
+
+![aws scp enable service control policies](images/aws_scp_enable_service_control_policies.png)
+SCPs must be enabled before we can attach custom guardrails to the OU.
+
+The first custom SCP is called "DenySensitiveIAMChanges". This policy blocks IAM actions that can be used for self-escalation in this repo.
+
+![aws scp create deny sensitive iam changes](images/aws_scp_create_deny_sensitive_iam_changes.png)
+Here, we created the "DenySensitiveIAMChanges" policy.
+
+```json
+{
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Sid": "DenyDangerousIamEscalationActionsExceptTrustedAdmins",
+   "Effect": "Deny",
+   "Action": [
+    "iam:CreateAccessKey",
+    "iam:PutUserPolicy",
+    "iam:AttachUserPolicy",
+    "iam:PutGroupPolicy",
+    "iam:AttachGroupPolicy",
+    "iam:AddUserToGroup",
+    "iam:UpdateAssumeRolePolicy",
+    "iam:CreatePolicyVersion",
+    "iam:SetDefaultPolicyVersion"
+   ],
+   "Resource": "*",
+   "Condition": {
+    "ArnNotLike": {
+     "aws:PrincipalArn": [
+      "arn:aws:iam::*:role/SecurityAdmin",
+      "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+     ]
+    }
+   }
+  }
+ ]
+}
+```
+
+This SCP blocks the risky IAM actions for normal users and roles. We added trusted admin role exceptions so the lab can still be cleaned up from the approved admin path.
+
+The second custom SCP is called DenyPassingAdminRoles. This policy blocks `iam:PassRole` when the role name looks like an admin role.
+
+![aws scp create deny passing admin roles](images/aws_scp_create_deny_passing_admin_roles.png)
+Here, we created the DenyPassingAdminRoles policy.
+
+```json
+{
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Sid": "DenyPassingAdminRolesToServicesExceptTrustedAdmins",
+   "Effect": "Deny",
+   "Action": "iam:PassRole",
+   "Resource": [
+    "arn:aws:iam::*:role/AdminAccess",
+    "arn:aws:iam::*:role/*Admin*",
+    "arn:aws:iam::*:role/*Administrator*"
+   ],
+   "Condition": {
+    "ArnNotLike": {
+     "aws:PrincipalArn": [
+      "arn:aws:iam::*:role/SecurityAdmin",
+      "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+     ]
+    }
+   }
+  }
+ ]
+}
+```
+
+This SCP is meant to stop the EC2 privilege escalation path where a user launches an instance with an admin instance profile.
+
+After creating both policies, we can see them in the SCP policy list.
+
+![aws scp available policies](images/aws_scp_available_policies.png)
+The custom policies are listed with the AWS managed `FullAWSAccess` policy.
+
+Before attaching the custom SCPs, the Sandbox OU had `FullAWSAccess` available through the root path.
+
+![aws scp sandbox policies before](images/aws_scp_sandbox_policies_before.png)
+![aws scp sandbox policies inherited](images/aws_scp_sandbox_policies_inherited.png)
+Here, we can see the inherited `FullAWSAccess` policy from the root.
+
+Finally, attach these policies to the `Sandbox` OU
+
+- `FullAWSAccess`
+- `DenySensitiveIAMChanges`
+- `DenyPassingAdminRoles`
+
+![aws scp attach policy selection](images/aws_scp_attach_policy_selection.png)
+
+![aws scp sandbox policies after](images/aws_scp_sandbox_policies_after.png)
+
+`FullAWSAccess` stays attached because this lab uses a deny list SCP setup. It allows the account to use AWS services at the SCP layer, while the two custom SCPs block the dangerous IAM paths. The final permission still depends on the IAM policy inside the member account.
+
+The next step is to retest the four exploit scenarios from [section 2](#2-exploits). The expected result is that IAM may allow the test user to try the action, but the SCP blocks the final request in the `aws-iam-security-lab` account.
+
+## 4. Audit Documentation
+
+The lab screenshots show the attack path and the AWS security services used for detection. The files below add the control review view: scope, risk, evidence, remediation, and framework mapping.
+
+
+### 4.1 Documentation Index
+
+| Document | What it covers |
+|---|---|
+| [Architecture and Scope](docs/architecture.md) | Lab account scope, identities, trust boundaries, assumptions, and secure target state. |
+| [Scenario Matrix](docs/scenario-matrix.md) | Risk, evidence, preventive control, detective control, and target outcome for each exploit. |
+| [Control Mapping](docs/control-mapping.md) | AWS guidance, CIS AWS Foundations anchors where applicable, ISO/IEC 27001-relevant controls, and required evidence. |
+| [Risk Register](docs/risk-register.md) | Prioritized risks, current controls, target controls, residual risk, and owner placeholders. |
+| [Remediation Playbooks](docs/remediation-playbooks/README.md) | Control fixes for the four privilege escalation scenarios. |
+| [Limitations](docs/limitations.md) | What the repo proves today, which exports are still needed, and what is out of scope. |
+
+### 4.2 Evidence Templates
+
+Evidence folders are templates until real AWS exports are added. Do not treat them as proof by themselves.
+
+| Scenario | Evidence folder | What to collect |
+|---|---|---|
+| `sts:AssumeRole` self-escalation | [evidence/assume-role](evidence/assume-role/README.md) | CloudTrail events, before and after IAM policies, role trust policy, denied retest proof, cleanup note. |
+| `ec2:RunInstances` with `iam:PassRole` | [evidence/passrole-runinstances](evidence/passrole-runinstances/README.md) | RunInstances event, instance profile details, security group settings, GuardDuty findings, IMDSv2 proof, cleanup note. |
+| `iam:CreateAccessKey` for another user | [evidence/create-access-key](evidence/create-access-key/README.md) | CreateAccessKey event, target user permission proof, key revocation proof, denied retest proof, cleanup note. |
+| `iam:AddUserToGroup` self-escalation | [evidence/add-user-to-group](evidence/add-user-to-group/README.md) | AddUserToGroup event, group policy export, before and after membership proof, access review note, denied retest proof. |
+
+Raw evidence should come from the AWS account used for the lab. Do not commit live access keys, secret access keys, session tokens, account IDs, or public IP addresses unless they are redacted.
