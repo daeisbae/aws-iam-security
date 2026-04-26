@@ -23,6 +23,7 @@ This repository is an AWS IAM security case study. It shows how common IAM permi
       - [3.3.2 Unusual API Calls from unusual IP](#332-unusual-api-calls-from-unusual-ip)
     - [3.4 AWS IAM Access Analyzer](#34-aws-iam-access-analyzer)
     - [3.5 AWS Organizations and SCP Guardrails](#35-aws-organizations-and-scp-guardrails)
+      - [3.5.1 Retest 1 - sts::AssumeRole Self-Escalation Path](#351-retest-1---stsassumerole-self-escalation-path)
   - [4. Audit Documentation](#4-audit-documentation)
     - [4.1 Documentation Index](#41-documentation-index)
     - [4.2 Evidence Templates](#42-evidence-templates)
@@ -468,7 +469,59 @@ Finally, attach these policies to the `Sandbox` OU
 
 `FullAWSAccess` stays attached because this lab uses a deny list SCP setup. It allows the account to use AWS services at the SCP layer, while the two custom SCPs block the dangerous IAM paths. The final permission still depends on the IAM policy inside the member account.
 
-The next step is to retest the four exploit scenarios from [section 2](#2-exploits). The expected result is that IAM may allow the test user to try the action, but the SCP blocks the final request in the `aws-iam-security-lab` account.
+After attaching the SCPs, we retest the four exploit scenarios from [section 2](#2-exploits). The expected result is that IAM may allow the test user to try the action, but the SCP blocks the final request in the `aws-iam-security-lab` account.
+
+#### 3.5.1 Retest 1 - sts::AssumeRole Self-Escalation Path
+
+For the first retest, we started with the `sts:AssumeRole` self-escalation path from [section 2.1](#21-iam-privilege-escalation---stsassumerole). The goal was to prepare an iam-service user that could normally create its own inline policy, then confirm the `DenySensitiveIAMChanges` SCP blocks the escalation path inside the Sandbox OU.
+
+![aws retest assumerole create iam service user](images/aws_retest_assumerole_create_iam_service_user.png)
+First, we created an admin role in the member account. This retest uses `AdminAccessRole`, which has the same purpose as the earlier `AdminAccess` role from the exploit walkthrough.
+
+![aws retest assumerole admin role permission](images/aws_retest_assumerole_admin_role_permission.png)
+Here, we selected the AWS managed `AdministratorAccess` policy for the role.
+
+![aws retest assumerole admin role review](images/aws_retest_assumerole_admin_role_review.png)
+The trust policy allows same-account role assumption in the lab account. This gives us a privileged role to test against during the retest.
+
+Then we created a customer managed policy named iam-service-policy. The policy allows iam-service to call iam:PutUserPolicy on itself.
+
+```json
+{
+ "Version": "2012-10-17",
+ "Statement": [
+  {
+   "Effect": "Allow",
+   "Action": "iam:PutUserPolicy",
+   "Resource": "arn:aws:iam::<member-account-id>:user/iam-service"
+  }
+ ]
+}
+```
+
+![aws retest assumerole put user policy allow](images/aws_retest_assumerole_putuserpolicy_allow.png)
+This permission is dangerous because the user can add an policy that allows `sts:AssumeRole` into an admin role.
+
+![aws retest assumerole policy review](images/aws_retest_assumerole_policy_review.png)
+The policy review page shows that the policy grants limited IAM permission management for iam-service.
+
+We then tried to attach iam-service-policy directly to the iam-service user.
+
+![aws retest assumerole attach policy to user](images/aws_retest_assumerole_attach_policy_to_user.png)
+The selected policy would normally give the user enough permission to continue the self escalation test.
+
+![aws retest assumerole user review](images/aws_retest_assumerole_user_review.png)
+The final user review shows iam-service-policy attached as a permissions policy before creation.
+
+When we created the user, AWS created iam-service, but it failed to attach the policy. This pass used the member account root user, and the SCP still applied because root is inside the member account and is not one of the exception roles in the policy. The error shows an explicit deny from a service control policy.
+
+![aws retest assumerole scp attach user policy denied](images/aws_retest_assumerole_scp_attachuserpolicy_denied.png)
+This is the expected guardrail behavior for the first retest. The `DenySensitiveIAMChanges` SCP blocks `iam:AttachUserPolicy`, so the user cannot receive the policy that would allow it to create its own `sts:AssumeRole` path.
+
+![aws retest assumerole cloudtrail attach user policy denied](images/aws_retest_assumerole_cloudtrail_attachuserpolicy_denied.png)
+CloudTrail also recorded the denied request.
+
+This retest shows that the SCP blocks the policy attachment step in the member account. A later pass can run the exact `iam:PutUserPolicy` or `sts:AssumeRole` denial as iam-service if we want evidence for the final exploit action as well.
 
 ## 4. Audit Documentation
 
